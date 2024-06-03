@@ -18,6 +18,8 @@ dotenv.config({
   path: "./config/config.env",
 });
 
+console.log(process.env.PORT);
+
 // Middlewares
 app.use(express.json());
 app.use(

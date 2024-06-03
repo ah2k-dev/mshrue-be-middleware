@@ -3,164 +3,130 @@ import ErrorHandler from "../utils/ErrorHandler.js";
 import axios from "axios";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import FormData from "form-data";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+import dotenv from "dotenv";
+dotenv.config({
+  path: "../config/config.env",
+});
 
 const createFile = async (req, res) => {
   try {
     if (req.files === null || req.files === undefined) {
       return res.status(400).json({ msg: "No file uploaded" });
     }
-    console.log("file --> ", req.files.file);
     let file = req.files.file;
-  
-    // const identityOptions = {
-    //   method: "POST",
-    //   url: "https://api.tap.company/v2/files",
-    //   headers: {
-    //     accept: "application/json",
-    //     // "content-type": "multipart/form-data",
-    //     Authorization: `Bearer sk_test_7lvSPa1sXVi6WdI0qGNHC4xU`,
-    //   },
-    //   data: identity,
-    // };
-    // axios(identityOptions)
-    //   .then((res) => {
-    //     console.log("data --> ",res.data);
-    //   })
-    //   .catch((err) => {
-    //     console.log("error --> ",err.request);
-    //   });
-  
-    // form data
-    // const identity = new FormData();
-    // identity.append("purpose", "identity_document");
-    // identity.append("title", "identity_document");
-    // identity.append("file_link_create", "true");
-    // identity.append("expires_at", "1913743462");
-    // identity.append("file", file);
-  
-    // const body = {
-    //   purpose: "identity_document",
-    //   title: "identity_document",
-    //   file_link_create: "true",
-    //   expires_at: "1913743462",
-    //   file: file
-    // }
-  
-    // const options = {
-    //   method: "POST",
-    //   headers: {
-    //     accept: "application/json",
-    //     Authorization: "Bearer sk_test_7lvSPa1sXVi6WdI0qGNHC4xU",
-    //   },
-    //   body: JSON.stringify(body),
-    // };
-  
-    // fetch("https://api.tap.company/v2/files", options)
-    //   .then((response) => response.json())
-    //   .then((response) => console.log(response))
-    //   .catch((err) => console.error(err));
-  
-    // http.request(
-    //   {
-    //     host: "https://api.tap.company",
-    //     path: "/v2/files",
-    //     method: "POST",
-    //     headers: {
-    //       accept: "application/json",
-    //       Authorization: "Bearer sk_test_7lvSPa1sXVi6WdI0qGNHC4xU",
-    //     },
-    //     body: identity,
-    //   },
-    //   (res) => {
-    //     console.log(res);
-    //   }
-    // );
-  
+
     file.mv(path.join(__dirname, `../../uploads`, file.name), (err) => {
       if (err) {
         console.log(err);
-        return res.json({ err });
+        return ErrorHandler(err.message, 500, req, res);
       }
     });
-  
-    var options = {
-      method: "POST",
-      url: "https://api.tap.company/v2/files",
-      headers: {
-        accept: "application/json",
-        Authorization: "Bearer sk_test_7lvSPa1sXVi6WdI0qGNHC4xU",
-      },
-      formData: JSON.stringify({
-        file: {
-          value: fs.createReadStream(
-            path.join(__dirname, `../../uploads`, file.name)
-          ),
-          options: {
-            filename: file.name,
-            contentType: null,
-          },
+
+    const data = new FormData();
+    data.append("title", req.body.title);
+    data.append("purpose", req.body.purpose);
+    // expires at will be in miliseconds
+    data.append("expires_at", req.body.expires_at);
+    data.append("file_link_create", "true");
+    data.append(
+      "file",
+      fs.createReadStream(path.join(__dirname, `../../uploads`, file.name))
+    );
+
+    console.log(process.env.TAP_BUSINESS_API_KEY);
+
+    const response = await axios.post(
+      "https://api.tap.company/v2/files",
+      data,
+      {
+        headers: {
+          // Authorization: `Bearer ${process.env.TAP_BUSINESS_API_KEY}`,
+          Authorization: `Bearer sk_test_7lvSPa1sXVi6WdI0qGNHC4xU`,
+          Accept: "application/json",
+          ...data.getHeaders(),
         },
-        file_link_create: " true",
-        purpose: "identity_document",
-        title: " Civil ID",
-      }),
-    };
-  
-    axios(options)
-      .then(function (response) {
-        // console.log("response --> ", response);
-        console.log(response.data);
-      })
-      .catch(function (error) {
-        let json = error.response.data;
-        console.log("error --> ",json);
-      });
-  
-    const filePath = `/uploads/${file.name}`;
-    return res.json({ filePath });
-  } catch (error) {
-    return ErrorHandler(error.message, 500, req, res);
-  }
-};
-const createBusiness = async (req, res) => {
-  try {
-  } catch (error) {
-    return ErrorHandler(error.message, 500, req, res);
-  }
-};
-const authorize = async (req, res) => {
-  try {
-  } catch (error) {
-    return ErrorHandler(error.message, 500, req, res);
-  }
-};
-const getAuthorization = async (req, res) => {
-  try {
-  } catch (error) {
-    return ErrorHandler(error.message, 500, req, res);
-  }
-};
-const getSavedCards = async (req, res) => {
-  try {
-  } catch (error) {
-    return ErrorHandler(error.message, 500, req, res);
-  }
-};
-const createToken = async (req, res) => {
-  try {
+      }
+    );
+
+    return SuccessHandler(
+      {
+        message: "File Uploaded Successfully",
+        response: response.data,
+      },
+      200,
+      res
+    );
   } catch (error) {
     return ErrorHandler(error.message, 500, req, res);
   }
 };
 
+const createBusiness = async (req, res) => {
+  try {
+    const { businessPayload } = req.body;
+
+    const response = await axios.post(
+      "https://api.tap.company/v2/business",
+      businessPayload,
+      {
+        headers: {
+          // Authorization: `Bearer ${process.env.TAP_BUSINESS_API_KEY}`,
+          Authorization: `Bearer sk_test_7lvSPa1sXVi6WdI0qGNHC4xU`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          ...businessPayload.getHeaders(),
+        },
+      }
+    );
+
+    return SuccessHandler(
+      {
+        message: "Business Created Successfully",
+        response: response.data,
+      },
+      200,
+      res
+    );
+  } catch (error) {
+    return ErrorHandler(error.message, 500, req, res);
+  }
+};
+
+// const authorize = async (req, res) => {
+//   try {
+//   } catch (error) {
+//     return ErrorHandler(error.message, 500, req, res);
+//   }
+// };
+// const getAuthorization = async (req, res) => {
+//   try {
+//   } catch (error) {
+//     return ErrorHandler(error.message, 500, req, res);
+//   }
+// };
+// const getSavedCards = async (req, res) => {
+//   try {
+//   } catch (error) {
+//     return ErrorHandler(error.message, 500, req, res);
+//   }
+// };
+// const createToken = async (req, res) => {
+//   try {
+//   } catch (error) {
+//     return ErrorHandler(error.message, 500, req, res);
+//   }
+// };
+
 export default {
   createFile,
   createBusiness,
-  authorize,
-  getAuthorization,
-  getSavedCards,
-  createToken,
+  // authorize,
+  // getAuthorization,
+  // getSavedCards,
+  // createToken,
 };

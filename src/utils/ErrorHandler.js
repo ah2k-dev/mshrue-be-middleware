@@ -1,4 +1,4 @@
-import logger from "../corporateServer/functions/logger.js";
+import logger from "../functions/logger.js";
 const ErrorHandler = (message, statusCode, req, res) => {
   logger.error({
     method: req.method,
