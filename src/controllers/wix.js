@@ -26,12 +26,14 @@ const createFile = async (req, res) => {
         return ErrorHandler(err.message, 500, req, res);
       }
     });
+// expires_at in miliseconds
+    const expires_at = Date.now() + 1000 * 60 * 60 * 24 * 30;
 
     const data = new FormData();
     data.append("title", req.body.title);
     data.append("purpose", req.body.purpose);
     // expires at will be in miliseconds
-    data.append("expires_at", req.body.expires_at);
+    data.append("expires_at", expires_at);
     data.append("file_link_create", "true");
     data.append(
       "file",
