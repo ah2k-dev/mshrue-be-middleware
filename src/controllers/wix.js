@@ -15,6 +15,7 @@ dotenv.config({
 
 const createFile = async (req, res) => {
   try {
+    console.log(req.files, req.body);
     if (req.files === null || req.files === undefined) {
       return res.status(400).json({ msg: "No file uploaded" });
     }
